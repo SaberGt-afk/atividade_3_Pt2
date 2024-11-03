@@ -17,6 +17,8 @@ public class RoberBehaviour : MonoBehaviour
         steal.AddChild(goToDiamond);
         steal.AddChild(goToVan);
         tree.AddChild(steal);
+
+        tree.PrintTree();
     }
 
     // Update is called once per frame
