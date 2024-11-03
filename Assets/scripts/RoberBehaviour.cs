@@ -11,12 +11,15 @@ public class RoberBehaviour : MonoBehaviour
     NavMeshAgent agent;
     public GameObject backdoor;
     public GameObject frontdoor;
-    
+
     public enum ActionState { IDLE, WORKING };
     ActionState state = ActionState.IDLE;
 
     Node.Status treeStatus = Node.Status.RUNNING;
-   
+
+    [Range(0, 1000)]
+    public int money = 800;
+
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -24,6 +27,7 @@ public class RoberBehaviour : MonoBehaviour
         tree = new BehaviourTree();
         Sequence steal = new Sequence("Steal Something");
         Leaf goToDiamond = new Leaf("Go To Diamond", GoToDiamond);
+        Leaf hasGotMoney = new Leaf("Has Got Money", HasMoney);
         Leaf goToBackdoor = new Leaf("Go To Backdoor", GoToBackdoor);
         Leaf goToFrontdoor = new Leaf("Go To Frontdoor", GoToFrontdoor);
         Leaf goToVan = new Leaf("Go To Van", GoToVan);
@@ -32,6 +36,7 @@ public class RoberBehaviour : MonoBehaviour
         openDoor.AddChild(goToFrontdoor);
         openDoor.AddChild(goToBackdoor);
 
+        steal.AddChild(hasGotMoney);
         steal.AddChild(openDoor);
         steal.AddChild(goToDiamond);
         steal.AddChild(goToVan);
@@ -40,16 +45,23 @@ public class RoberBehaviour : MonoBehaviour
         tree.PrintTree();
     }
 
+    public Node.Status HasMoney() 
+    {
+        // Corrigido para verificar se há dinheiro suficiente
+        if (money <= 500) return Node.Status.SUCCESS; 
+        return Node.Status.FAILURE; 
+    }
+
     public Node.Status GoToDiamond() 
     {
         Node.Status s = GoToLocation(diamond.transform.position);
         if (s == Node.Status.SUCCESS) 
         {
-            diamond.transform.parent = this.gameObject.transform;
+            diamond.transform.parent = this.gameObject.transform; // Anexa o diamante ao Rober
         }
         return s;
     }
-    
+
     public Node.Status GoToBackdoor() 
     {
         return GoToDoor(backdoor);
@@ -70,12 +82,12 @@ public class RoberBehaviour : MonoBehaviour
         Node.Status s = GoToLocation(door.transform.position); 
         if (s == Node.Status.SUCCESS)
         {
-            if (!door.GetComponent<Lock>().isLocked)
+            if (!door.GetComponent<Lock>().isLocked) // Verifica se a porta está trancada
             {
-                door.SetActive(false); 
+                door.SetActive(false); // Abre a porta
                 return Node.Status.SUCCESS; 
             }
-            return Node.Status.FAILURE; 
+            return Node.Status.FAILURE; // A porta está trancada
         }
         return s; 
     }
@@ -88,23 +100,23 @@ public class RoberBehaviour : MonoBehaviour
             agent.SetDestination(destination);
             state = ActionState.WORKING;
         } 
-        else if (Vector3.Distance(agent.pathEndPosition, destination) >= 2.0f) 
-        {
-            state = ActionState.IDLE;
-            return Node.Status.FAILURE;
-        } 
         else if (distanceToTarget < 2.0f) 
         {
             state = ActionState.IDLE;
-            return Node.Status.SUCCESS;
+            return Node.Status.SUCCESS; // Chegou ao destino
+        } 
+        else if (Vector3.Distance(agent.pathEndPosition, destination) >= 2.0f) 
+        {
+            state = ActionState.IDLE;
+            return Node.Status.FAILURE; // Não chegou ao destino
         }
-        return Node.Status.RUNNING;
+        return Node.Status.RUNNING; // A caminho
     }
 
-    // Update is called once per frame
+    // Update é chamado uma vez por frame
     void Update()
     {
-        if (treeStatus == Node.Status.RUNNING)
-            treeStatus = tree.Process();
+        if(treeStatus != Node.Status.SUCCESS)
+            treeStatus = tree.Process(); // Processa a árvore de comportamento
     }
 }

@@ -2005,6 +2005,7 @@ MonoBehaviour:
   van: {fileID: 737444972}
   backdoor: {fileID: 919599686}
   frontdoor: {fileID: 1791870521}
+  money: 444
 --- !u!208 &642336165
 NavMeshObstacle:
   m_ObjectHideFlags: 0
